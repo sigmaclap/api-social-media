@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  social-media-api:
+    build: .
+    container_name: social-media-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - main-db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://main-db:5432/main
+      - DATABASE_NAME=admin
+      - DATABASE_PASSWORD=admin
+
+  main-db:
+    image: postgres:15-alpine
+    container_name: main-db
+    ports:
+      - "6542:5432"
+    environment:
+      - POSTGRES_DB=main
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
