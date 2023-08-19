@@ -36,13 +36,9 @@ public class FriendshipServiceImpl implements FriendshipService {
 
     @Override
     public FriendshipDto requestFriendship(long followerId, long userId) {
-        if (followerId == userId) {
-            throw new InvalidDataException("You can't follow yourself.");
-        }
-        User follower = userRepository.findById(followerId)
-                .orElseThrow(() -> new UserNotFoundException("Follower not found"));
-        User friend = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("Friend not found"));
+        isCheckSendRequestNotToYourself(followerId, userId);
+        User follower = validateExistsUser(followerId);
+        User friend = validateExistsUser(userId);
         isCheckFriendshipExist(followerId, userId);
         Friendship request = Friendship.builder()
                 .follower(follower)
@@ -53,20 +49,11 @@ public class FriendshipServiceImpl implements FriendshipService {
         return FriendshipMapper.toDto(friendshipRepository.save(request));
     }
 
+
     @Override
     public List<FriendshipDto> approveFriendship(long userId, List<Long> ids) {
         List<Friendship> subList = friendshipRepository.findAllByFollowerIdIn(ids);
-        if (subList.isEmpty()) {
-            throw new InvalidDataException("Friendship requests were not found");
-        }
-        boolean matchUser = subList.stream().allMatch(f -> f.getFriend().getId() == userId);
-        if (!matchUser) {
-            throw new InvalidDataException("You can only change your requests");
-        }
-        boolean checkStatus = subList.stream().noneMatch(f -> Set.of(SUBSCRIBER).contains(f.getState()));
-        if (checkStatus) {
-            throw new InvalidDataException("Status for friendship incorrect");
-        }
+        isCheckValidDataToApproveFriendship(userId, subList);
         User friend = userRepository.getReferenceById(userId);
         List<User> subscribers = userRepository.findUserByIdIn(ids);
         List<Friendship> approvedRequests = new ArrayList<>();
@@ -88,29 +75,17 @@ public class FriendshipServiceImpl implements FriendshipService {
             approvedRequests.add(request);
 
         }
-        friendshipRepository.saveAll(approvedRequests);
-        subList.forEach(friendship -> friendship.setState(FRIENDSHIP));
-        List<Friendship> saved = friendshipRepository.saveAll(subList);
-        subList.addAll(approvedRequests);
+        List<Friendship> saved = setStatusAndSaveFriendships(approvedRequests, subList);
         return saved.stream()
                 .map(FriendshipMapper::toDto)
                 .collect(Collectors.toList());
     }
 
+
     @Override
     public List<FriendshipDto> rejectFriendship(long userId, List<Long> ids) {
         List<Friendship> subList = friendshipRepository.findAllByFollowerIdIn(ids);
-        if (subList.isEmpty()) {
-            throw new InvalidDataException("Friendship requests were not found");
-        }
-        boolean matchUser = subList.stream().allMatch(f -> f.getFriend().getId() == userId);
-        if (!matchUser) {
-            throw new InvalidDataException("You can only change your requests");
-        }
-        boolean checkStatus = subList.stream().noneMatch(f -> Set.of(SUBSCRIBER, FRIENDSHIP).contains(f.getState()));
-        if (checkStatus) {
-            throw new InvalidDataException("Status for friendship incorrect");
-        }
+        isCheckValidDataToRejectFriendship(userId, subList);
         subList.forEach(friendship -> friendship.setState(SUBSCRIBER));
         List<Friendship> saved = friendshipRepository.saveAll(subList);
         return saved.stream()
@@ -118,37 +93,29 @@ public class FriendshipServiceImpl implements FriendshipService {
                 .collect(Collectors.toList());
     }
 
+
     @Override
     public FriendshipDto requestChat(long fromUser, long toUser) {
-        Friendship request = friendshipRepository.findByFollowerIdAndFriendId(fromUser, toUser)
-                .orElseThrow(() -> new FriendshipNotFoundException("Friendship not found"));
-        if (!request.getState().equals(FRIENDSHIP)) {
-            throw new InvalidDataException("Only friends can opened chat each other");
-        }
+        Friendship request = validateExistsFriendship(fromUser, toUser);
+        isCheckUsersHasFriendship(request);
         request.setChat(REQUEST);
         return FriendshipMapper.toDto(friendshipRepository.save(request));
     }
 
+
     @Override
     public void deleteFriendshipRequest(long followerId, long subsId) {
-        if (!friendshipRepository.existsByFollowerIdAndFriendId(followerId, subsId)) {
-            throw new UserNotFoundException("Subscribers request no exist.");
-        }
+        isCheckExistsFriendshipRequest(followerId, subsId);
         friendshipRepository.deleteByFollowerIdAndFriendId(followerId, subsId);
     }
 
     @Override
     public void deleteFriendship(long followerId, long subsId) {
-        if (!friendshipRepository.existsByFollowerIdAndFriendId(followerId, subsId)) {
-            throw new UserNotFoundException("Friendship request no exist.");
-        }
+        isCheckExistsFriendshipRequest(followerId, subsId);
         friendshipRepository.deleteByFollowerIdAndFriendId(followerId, subsId);
-        Friendship friendship = friendshipRepository.findByFollowerIdAndFriendId(subsId, followerId)
-                .orElseThrow(() -> new FriendshipNotFoundException("Friendship not found"));
-        User friend = userRepository.findById(followerId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-        User subscriber = userRepository.findById(subsId)
-                .orElseThrow(() -> new UserNotFoundException("Subscriber not found"));
+        Friendship friendship = validateExistsFriendship(subsId, followerId);
+        User friend = validateExistsUser(followerId);
+        User subscriber = validateExistsUser(subsId);
         friendship.setFollower(subscriber);
         friendship.setFriend(friend);
         friendship.setState(SUBSCRIBER);
@@ -170,6 +137,73 @@ public class FriendshipServiceImpl implements FriendshipService {
         return posts.stream()
                 .map(PostMapper::toDtoPost)
                 .collect(Collectors.toList());
+    }
+
+    private List<Friendship> setStatusAndSaveFriendships(List<Friendship> approvedRequests, List<Friendship> subList) {
+        friendshipRepository.saveAll(approvedRequests);
+        subList.forEach(friendship -> friendship.setState(FRIENDSHIP));
+        List<Friendship> saved = friendshipRepository.saveAll(subList);
+        subList.addAll(approvedRequests);
+        return saved;
+    }
+
+    private static void isCheckValidDataToApproveFriendship(long userId, List<Friendship> subList) {
+        if (subList.isEmpty()) {
+            throw new InvalidDataException("Friendship requests were not found");
+        }
+        boolean matchUser = subList.stream().allMatch(f -> f.getFriend().getId() == userId);
+        if (!matchUser) {
+            throw new InvalidDataException("You can only change your requests");
+        }
+        boolean checkStatus = subList.stream().noneMatch(f -> Set.of(SUBSCRIBER).contains(f.getState()));
+        if (checkStatus) {
+            throw new InvalidDataException("Status for friendship incorrect");
+        }
+    }
+
+    private static void isCheckValidDataToRejectFriendship(long userId, List<Friendship> subList) {
+        if (subList.isEmpty()) {
+            throw new InvalidDataException("Friendship requests were not found");
+        }
+        boolean matchUser = subList.stream().allMatch(f -> f.getFriend().getId() == userId);
+        if (!matchUser) {
+            throw new InvalidDataException("You can only change your requests");
+        }
+        boolean checkStatus = subList.stream().noneMatch(f -> Set.of(SUBSCRIBER, FRIENDSHIP).contains(f.getState()));
+        if (checkStatus) {
+            throw new InvalidDataException("Status for friendship incorrect");
+        }
+    }
+
+    private void isCheckExistsFriendshipRequest(long followerId, long subsId) {
+        boolean checkExistsFriendshipRequest = friendshipRepository
+                .existsByFollowerIdAndFriendId(followerId, subsId);
+        if (!checkExistsFriendshipRequest) {
+            throw new UserNotFoundException("Friendship request no exist.");
+        }
+    }
+
+    private static void isCheckUsersHasFriendship(Friendship request) {
+        if (!request.getState().equals(FRIENDSHIP)) {
+            throw new InvalidDataException("Only friends can opened chat each other");
+        }
+    }
+
+    private Friendship validateExistsFriendship(long followerId, long subsId) {
+        return friendshipRepository.findByFollowerIdAndFriendId(followerId, subsId)
+                .orElseThrow(() -> new FriendshipNotFoundException("Friendship not found"));
+    }
+
+    private User validateExistsUser(long userId) {
+        return userRepository.findById(userId)
+
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+    }
+
+    private static void isCheckSendRequestNotToYourself(long followerId, long userId) {
+        if (followerId == userId) {
+            throw new InvalidDataException("You can't follow yourself.");
+        }
     }
 
     private void isCheckFriendshipExist(long userId, long friendId) {

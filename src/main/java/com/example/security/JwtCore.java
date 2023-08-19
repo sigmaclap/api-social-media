@@ -12,9 +12,9 @@ import java.util.Date;
 
 @Component
 public class JwtCore {
-    @Value("${testing.app.secret}")
+    @Value("${token.app.secret}")
     private String secret;
-    @Value("${testing.app.lifetime}")
+    @Value("${token.app.lifetime}")
     private int lifetime;
 
     public String generateToken(Authentication authentication) {

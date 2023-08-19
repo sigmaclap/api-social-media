@@ -63,7 +63,7 @@ class FriendshipServiceImplTest {
         long followerId = 1L;
         long userId = 2L;
 
-        UserNotFoundException expectedException = new UserNotFoundException("Follower not found");
+        UserNotFoundException expectedException = new UserNotFoundException("User not found");
 
         when(userRepository.findById(any())).thenReturn(Optional.empty());
 
@@ -78,7 +78,7 @@ class FriendshipServiceImplTest {
         long followerId = 1L;
         long userId = 2L;
 
-        UserNotFoundException expectedException = new UserNotFoundException("Friend not found");
+        UserNotFoundException expectedException = new UserNotFoundException("User not found");
 
         when(userRepository.findById(followerId)).thenReturn(Optional.of(new User()));
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
@@ -405,7 +405,8 @@ class FriendshipServiceImplTest {
     void testRequestChat_FriendshipNotFound() {
         long fromUser = 1;
         long toUser = 2;
-        when(friendshipRepository.findByFollowerIdAndFriendId(fromUser, toUser)).thenReturn(Optional.empty());
+        when(friendshipRepository.findByFollowerIdAndFriendId(fromUser, toUser))
+                .thenReturn(Optional.empty());
 
         assertThrows(FriendshipNotFoundException.class,
                 () -> friendshipService.requestChat(fromUser, toUser));
@@ -487,7 +488,8 @@ class FriendshipServiceImplTest {
         when(friendshipRepository.existsByFollowerIdAndFriendId(followerId, subsId)).thenReturn(true);
         when(friendshipRepository.findByFollowerIdAndFriendId(subsId, followerId)).thenReturn(Optional.empty());
 
-        assertThrows(FriendshipNotFoundException.class, () -> friendshipService.deleteFriendship(followerId, subsId));
+        assertThrows(FriendshipNotFoundException.class,
+                () -> friendshipService.deleteFriendship(followerId, subsId));
 
         verify(friendshipRepository, times(1)).deleteByFollowerIdAndFriendId(followerId, subsId);
         verify(friendshipRepository, never()).save(any(Friendship.class));
