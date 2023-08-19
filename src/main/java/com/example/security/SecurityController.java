@@ -1,5 +1,6 @@
 package com.example.security;
 
+import com.example.exceptions.BadRequestException;
 import com.example.user.UserRepository;
 import com.example.user.dto.SigninRequest;
 import com.example.user.dto.SignupRequest;
@@ -15,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Transactional
 @Tag(name = "Контроллер регистрации и авторизации")
 public class SecurityController {
     private final UserRepository userRepository;
@@ -36,18 +39,8 @@ public class SecurityController {
             description = "Позволяет зарегистрировать пользователя"
     )
     ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
-        if (userRepository.existsByUsername(signupRequest.getUsername())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Choose different username");
-        }
-        if (userRepository.existsByEmail(signupRequest.getEmail())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Choose different email");
-        }
-        String hashed = passwordEncoder.encode(signupRequest.getPassword());
-        User user = new User();
-        user.setEmail(signupRequest.getUsername());
-        user.setPassword(hashed);
-        user.setUsername(signupRequest.getUsername());
-        userRepository.save(user);
+        isCheckExistsUserDetails(signupRequest);
+        createAndSaveUser(signupRequest);
         return ResponseEntity.ok("Successful registration!");
     }
 
@@ -72,5 +65,23 @@ public class SecurityController {
                 .ok(TokenDto.builder()
                         .token(jwt)
                         .build());
+    }
+
+    private void createAndSaveUser(SignupRequest signupRequest) {
+        String hashed = passwordEncoder.encode(signupRequest.getPassword());
+        User user = new User();
+        user.setEmail(signupRequest.getUsername());
+        user.setPassword(hashed);
+        user.setUsername(signupRequest.getUsername());
+        userRepository.save(user);
+    }
+
+    private void isCheckExistsUserDetails(SignupRequest signupRequest) {
+        if (userRepository.existsByUsername(signupRequest.getUsername())) {
+            throw new BadRequestException("Choose different username");
+        }
+        if (userRepository.existsByEmail(signupRequest.getEmail())) {
+            throw new BadRequestException("Choose different email");
+        }
     }
 }

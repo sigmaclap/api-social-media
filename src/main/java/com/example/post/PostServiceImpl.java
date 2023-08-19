@@ -29,9 +29,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostDto> getAllPosts(Long userId, Integer from, Integer size) {
         List<Post> posts = postRepository.findAllByOwner_idOrderByIdAsc(userId, PageRequest.of(from, size)).getContent();
-        if (posts.isEmpty()) {
-            return Collections.emptyList();
-        }
+        if (posts.isEmpty()) return Collections.emptyList();
         return posts.stream()
                 .map(PostMapper::toDtoPost)
                 .collect(Collectors.toList());
@@ -41,7 +39,6 @@ public class PostServiceImpl implements PostService {
     public PostDto createPost(Long userid, PostDto dto) {
         Post post = PostMapper.toPost(dto);
         post.setOwner(validateExistsUser(userid));
-
         return PostMapper.toDtoPost(postRepository.save(post));
     }
 
@@ -51,9 +48,7 @@ public class PostServiceImpl implements PostService {
         User user = validateExistsUser(userId);
         Post post = validateExistsPost(postId);
         validateUserOwnerPost(post, user);
-        if (postToUpdate.getText() != null) post.setText(postToUpdate.getText());
-        if (postToUpdate.getDescription() != null) post.setDescription(post.getDescription());
-        if (postToUpdate.getImage() != null) post.setImage(postToUpdate.getImage());
+        setPostDetails(postToUpdate, post);
         return PostMapper.toDtoPost(postRepository.save(post));
     }
 
@@ -64,6 +59,11 @@ public class PostServiceImpl implements PostService {
         Post post = validateExistsPost(postId);
         validateUserOwnerPost(post, user);
         postRepository.delete(post);
+    }
+    private static void setPostDetails(Post postToUpdate, Post post) {
+        if (postToUpdate.getText() != null) post.setText(postToUpdate.getText());
+        if (postToUpdate.getDescription() != null) post.setDescription(post.getDescription());
+        if (postToUpdate.getImage() != null) post.setImage(postToUpdate.getImage());
     }
 
     private Post validateExistsPost(Long postId) {

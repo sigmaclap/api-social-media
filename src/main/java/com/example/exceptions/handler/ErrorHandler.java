@@ -1,9 +1,6 @@
 package com.example.exceptions.handler;
 
-import com.example.exceptions.FriendshipNotFoundException;
-import com.example.exceptions.InvalidDataException;
-import com.example.exceptions.PostNotFoundException;
-import com.example.exceptions.UserNotFoundException;
+import com.example.exceptions.*;
 import lombok.Generated;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,7 +24,7 @@ public class ErrorHandler {
     private static final String ERROR_REASON_CONFLICT = "Integrity constraint has been violated.";
     private static final String ERROR_REASON_NOT_FOUND = "The required object was not found.";
 
-    @ExceptionHandler({ConstraintViolationException.class})
+    @ExceptionHandler({BadRequestException.class, ConstraintViolationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleInvalidDataException(final RuntimeException e) {
         log.error(e.getMessage(), Arrays.toString(e.getStackTrace()));
