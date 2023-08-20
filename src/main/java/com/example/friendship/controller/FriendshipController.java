@@ -3,7 +3,9 @@ package com.example.friendship.controller;
 import com.example.friendship.FriendshipService;
 import com.example.friendship.dto.FriendshipDto;
 import com.example.post.dto.PostDto;
+import com.example.utills.UserHolder;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -17,13 +19,14 @@ import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
 
 @RestController
-@RequestMapping("/secured/users/{userId}/friendships")
+@RequestMapping("/secured/users/friendships")
 @RequiredArgsConstructor
 @Validated
 @Slf4j
 @Tag(name = "Взаимодействие пользователей")
 public class FriendshipController {
     private final FriendshipService friendshipService;
+    private final UserHolder userHolder;
 
     @PostMapping("/{friendId}")
     @ResponseStatus(HttpStatus.CREATED)
@@ -32,10 +35,8 @@ public class FriendshipController {
             summary = "Создание подписки на другого пользователя",
             description = "Позволяет подписаться на другого пользователя"
     )
-    public FriendshipDto requestFriendship(
-            @PathVariable("userId") long followerId,
-            @PathVariable("friendId") long friendId) {
-        return friendshipService.requestFriendship(followerId, friendId);
+    public FriendshipDto requestFriendship(@PathVariable("friendId") long friendId) {
+        return friendshipService.requestFriendship(userHolder.getUserId(), friendId);
     }
 
     @DeleteMapping("/{subsId}")
@@ -44,10 +45,8 @@ public class FriendshipController {
     @Operation(
             summary = "Удаление подписки на другого пользователя"
     )
-    public void deleteFriendshipRequest(
-            @PathVariable("userId") long followerId,
-            @PathVariable("subsId") long subsId) {
-        friendshipService.deleteFriendshipRequest(followerId, subsId);
+    public void deleteFriendshipRequest(@PathVariable("subsId") long subsId) {
+        friendshipService.deleteFriendshipRequest(userHolder.getUserId(), subsId);
     }
 
     @DeleteMapping("/delete/{subsId}")
@@ -56,10 +55,8 @@ public class FriendshipController {
     @Operation(
             summary = "Удаление дружбы с другим пользователем"
     )
-    public void deleteFriendship(
-            @PathVariable("userId") long followerId,
-            @PathVariable("subsId") long subsId) {
-        friendshipService.deleteFriendship(followerId, subsId);
+    public void deleteFriendship(@PathVariable("subsId") long subsId) {
+        friendshipService.deleteFriendship(userHolder.getUserId(), subsId);
     }
 
     @PatchMapping("/approve")
@@ -67,10 +64,8 @@ public class FriendshipController {
     @Operation(
             summary = "Подтверждение в друзья подписчика"
     )
-    public List<FriendshipDto> approveFriendship(
-            @PathVariable("userId") long followerId,
-            @RequestParam(value = "ids", required = false) List<Long> ids) {
-        return friendshipService.approveFriendship(followerId, ids);
+    public List<FriendshipDto> approveFriendship(@RequestParam(value = "subscribersIds") List<Long> subscribersIds) {
+        return friendshipService.approveFriendship(userHolder.getUserId(), subscribersIds);
     }
 
     @PatchMapping("/chat/{toUser}")
@@ -78,10 +73,8 @@ public class FriendshipController {
     @Operation(
             summary = "Отправка запроса на создание чата с другим пользователем"
     )
-    public FriendshipDto requestChat(
-            @PathVariable("userId") long fromUser,
-            @PathVariable long toUser) {
-        return friendshipService.requestChat(fromUser, toUser);
+    public FriendshipDto requestChat(@PathVariable long toUser) {
+        return friendshipService.requestChat(userHolder.getUserId(), toUser);
     }
 
     @PatchMapping("/reject")
@@ -89,10 +82,8 @@ public class FriendshipController {
     @Operation(
             summary = "Отклонение заявки в друзья другим пользователем"
     )
-    public List<FriendshipDto> rejectFriendship(
-            @PathVariable("userId") long followerId,
-            @RequestParam(value = "ids", required = false) List<Long> ids) {
-        return friendshipService.rejectFriendship(followerId, ids);
+    public List<FriendshipDto> rejectFriendship(@RequestParam(value = "subscribersIds") List<Long> subscribersIds) {
+        return friendshipService.rejectFriendship(userHolder.getUserId(), subscribersIds);
     }
 
     @GetMapping("/events")
@@ -100,12 +91,10 @@ public class FriendshipController {
     @Operation(
             summary = "Получение всех событий подписчиков"
     )
-    public List<PostDto> getSubscriptionEvents(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
-            @RequestParam(defaultValue = "20") @Positive Integer size,
-            @RequestParam(defaultValue = "DESC") String sort) {
-        return friendshipService.getSubscriptionEvents(userId, from, size, sort);
+    public List<PostDto> getSubscriptionEvents(@RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+                                               @RequestParam(defaultValue = "20") @Positive Integer size,
+                                               @RequestParam(defaultValue = "DESC") @Parameter(description = "Сортировка времени по умолчанию - по убыванию") String sort) {
+        return friendshipService.getSubscriptionEvents(userHolder.getUserId(), from, size, sort);
 
     }
 }

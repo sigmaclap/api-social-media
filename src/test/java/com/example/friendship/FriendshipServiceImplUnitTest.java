@@ -13,7 +13,6 @@ import com.example.post.entity.Post;
 import com.example.user.UserRepository;
 import com.example.user.entity.User;
 import com.example.user.mapper.UserMapper;
-import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.util.*;
 
@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class FriendshipServiceImplTest {
+class FriendshipServiceImplUnitTest {
     @InjectMocks
     FriendshipServiceImpl friendshipService;
     @Mock
@@ -42,7 +42,6 @@ class FriendshipServiceImplTest {
     PostRepository postRepository;
     @Mock
     FriendshipRepository friendshipRepository;
-    private final EasyRandom generator = new EasyRandom();
 
     @Test
     void testRequestFriendship_ThrowsInvalidDataException() {
@@ -197,15 +196,15 @@ class FriendshipServiceImplTest {
         friendship2.setId(3L);
         friendship2.setFollower(follower2);
         friendship2.setFriend(friend1);
-        friendship2.setState(SUBSCRIBER); // Создаем mock объект Friendship
-        List<Friendship> subList = new ArrayList<>(); // Создаем mock объект List<Friendship>
+        friendship2.setState(SUBSCRIBER);
+        List<Friendship> subList = new ArrayList<>();
         subList.add(friendship1);
         subList.add(friendship2);
         List<User> subscribers = new ArrayList<>();
         subscribers.add(follower);
         subscribers.add(follower1);
         when(friendshipRepository.findAllByFollowerIdIn(ids)).thenReturn(subList);
-        when(userRepository.getReferenceById(friend1.getId())).thenReturn(friend1);
+        when(userRepository.findById(friend1.getId())).thenReturn(Optional.of(friend1));
         when(userRepository.findUserByIdIn(ids)).thenReturn(subscribers);
         when(friendshipRepository.findByFollowerIdAndFriendId(friend1.getId(), follower.getId()))
                 .thenReturn(Optional.of(friendship1));
@@ -323,7 +322,7 @@ class FriendshipServiceImplTest {
         friendship2.setFriend(friend1);
         friendship2.setState(CANCELED);
         List<Friendship> sublist = Arrays.asList(friendship1, friendship2);
-        InvalidDataException expected = new InvalidDataException("Status for friendship incorrect");
+        InvalidDataException expected = new InvalidDataException("Status for reject friendship incorrect");
 
         when(friendshipRepository.findAllByFollowerIdIn(ids))
                 .thenReturn(Arrays.asList(friendship1, friendship2));
@@ -505,7 +504,9 @@ class FriendshipServiceImplTest {
         List<Post> mockPosts = new ArrayList<>();
         mockPosts.add(new Post());
 
-        when(postRepository.getSubscribersEventsDateAsc(userId, PageRequest.of(from, size)))
+        when(postRepository.getSubscribersEventsDate(userId, PageRequest.of(from, size,
+                sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                "created_date")))
                 .thenReturn(new PageImpl<>(mockPosts));
 
         List<PostDto> result = friendshipService.getSubscriptionEvents(userId, from, size, sort);
@@ -523,7 +524,9 @@ class FriendshipServiceImplTest {
 
         List<Post> mockPosts = new ArrayList<>();
 
-        when(postRepository.getSubscribersEventsDateAsc(userId, PageRequest.of(from, size)))
+        when(postRepository.getSubscribersEventsDate(userId, PageRequest.of(from, size,
+                sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                "created_date")))
                 .thenReturn(new PageImpl<>(mockPosts));
 
         List<PostDto> result = friendshipService.getSubscriptionEvents(userId, from, size, sort);
@@ -539,13 +542,17 @@ class FriendshipServiceImplTest {
         int size = 10;
         String sort = "asc";
 
-        when(postRepository.getSubscribersEventsDateAsc(userId, PageRequest.of(from, size)))
+        when(postRepository.getSubscribersEventsDate(userId, PageRequest.of(from, size,
+                sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                "created_date")))
                 .thenReturn(new PageImpl<>(new ArrayList<>()));
 
         friendshipService.getSubscriptionEvents(userId, from, size, sort);
 
         verify(postRepository, times(1))
-                .getSubscribersEventsDateAsc(userId, PageRequest.of(from, size));
+                .getSubscribersEventsDate(userId, PageRequest.of(from, size,
+                        sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                        "created_date"));
     }
 
     @Test
@@ -555,12 +562,16 @@ class FriendshipServiceImplTest {
         int size = 10;
         String sort = "desc";
 
-        when(postRepository.getSubscribersEventsDateDesc(userId, PageRequest.of(from, size)))
+        when(postRepository.getSubscribersEventsDate(userId, PageRequest.of(from, size,
+                sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                "created_date")))
                 .thenReturn(new PageImpl<>(new ArrayList<>()));
 
         friendshipService.getSubscriptionEvents(userId, from, size, sort);
 
         verify(postRepository, times(1))
-                .getSubscribersEventsDateDesc(userId, PageRequest.of(from, size));
+                .getSubscribersEventsDate(userId, PageRequest.of(from, size,
+                        sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                        "created_date"));
     }
 }

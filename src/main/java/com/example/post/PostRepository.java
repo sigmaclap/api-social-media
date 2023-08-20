@@ -12,14 +12,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query(value = "SELECT p.id , p.description , p.\"text\" , p.image , p.owner_id , p.created_date\n" +
             "FROM posts p\n" +
             "JOIN friendship f ON p.owner_id = f.friend_id\n" +
-            "WHERE f.follower_id = ?1 AND (f.state = 'SUBSCRIBER' OR f.state = 'FRIENDSHIP')\n" +
-            "ORDER BY p.created_date DESC", nativeQuery = true)
-    Page<Post> getSubscribersEventsDateDesc(Long userId, Pageable pageable);
+            "WHERE f.follower_id = ?1 AND (f.state = 'SUBSCRIBER' OR f.state = 'FRIENDSHIP')", nativeQuery = true)
+    Page<Post> getSubscribersEventsDate(Long userId, Pageable pageable);
 
-    @Query(value = "SELECT p.id , p.description , p.\"text\" , p.image , p.owner_id , p.created_date\n" +
-            "FROM posts p\n" +
-            "JOIN friendship f ON p.owner_id = f.friend_id\n" +
-            "WHERE f.follower_id = ?1 AND (f.state = 'SUBSCRIBER' OR f.state = 'FRIENDSHIP')\n" +
-            "ORDER BY p.created_date ASC", nativeQuery = true)
-    Page<Post> getSubscribersEventsDateAsc(Long userId, Pageable pageable);
 }

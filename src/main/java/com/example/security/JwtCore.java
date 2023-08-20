@@ -14,7 +14,7 @@ import java.util.Date;
 public class JwtCore {
     @Value("${token.app.secret}")
     private String secret;
-    @Value("${token.app.lifetime}")
+    @Value("${token.app.lifetime.ms}")
     private int lifetime;
 
     public String generateToken(Authentication authentication) {

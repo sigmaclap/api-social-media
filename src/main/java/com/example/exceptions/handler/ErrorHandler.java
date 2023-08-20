@@ -5,6 +5,7 @@ import lombok.Generated;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -61,13 +62,25 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleMethodUnauthorized(final BadCredentialsException e) {
+        log.error(e.getMessage(), Arrays.toString(e.getStackTrace()));
+        return ErrorResponse.builder()
+                .status(HttpStatus.UNAUTHORIZED.name())
+                .reason("Failed authorization")
+                .message(e.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleMethodValidException(final MethodArgumentNotValidException e) {
         log.error(e.getMessage(), Arrays.toString(e.getStackTrace()));
         return ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.name())
                 .reason(ERROR_REASON_BAD_REQUEST)
-                .message("Error validation Data")
+                .message(e.getMessage())
                 .timestamp(LocalDateTime.now())
                 .build();
     }

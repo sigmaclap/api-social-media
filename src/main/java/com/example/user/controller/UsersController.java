@@ -2,6 +2,7 @@ package com.example.user.controller;
 
 import com.example.user.UserService;
 import com.example.user.dto.UserDto;
+import com.example.utills.UserHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +24,7 @@ import java.util.List;
 @Tag(name = "Пользователи")
 public class UsersController {
     private final UserService userService;
+    private final UserHolder userHolder;
 
     @GetMapping
     @SecurityRequirement(name = "JWT")
@@ -42,8 +44,8 @@ public class UsersController {
     @Operation(
             summary = "Удаление пользователя по ID"
     )
-    public void deleteUser(@PathVariable Long userId) {
-        log.info("Deleting user with id {}", userId);
-        userService.deleteUser(userId);
+    public void deleteUser() {
+        log.info("Deleting user with id {}", userHolder.getUserId());
+        userService.deleteUser(userHolder.getUserId());
     }
 }

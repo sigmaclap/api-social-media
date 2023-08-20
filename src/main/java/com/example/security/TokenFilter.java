@@ -1,7 +1,9 @@
 package com.example.security;
 
+import com.example.utills.UserHolder;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,9 +20,11 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class TokenFilter extends OncePerRequestFilter {
     private final JwtCore jwtCore;
     private final UserDetailsService userDetailsService;
+    private final UserHolder userHolder;
 
 
     @Override
@@ -38,7 +42,7 @@ public class TokenFilter extends OncePerRequestFilter {
                 try {
                     username = jwtCore.getNameFromJwt(jwt);
                 } catch (ExpiredJwtException e) {
-                    e.printStackTrace(); //TODO
+                    log.error("ExpiredJwtException problem with JWT", e);
                 }
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     userDetails = userDetailsService.loadUserByUsername(username);
@@ -46,10 +50,12 @@ public class TokenFilter extends OncePerRequestFilter {
                             userDetails,
                             null, List.of(Role.USER));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    userHolder.setUserDetails(userDetails);
+
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace(); //TODO
+            log.error("Problem with authentication", e);
         }
         filterChain.doFilter(request, response);
     }

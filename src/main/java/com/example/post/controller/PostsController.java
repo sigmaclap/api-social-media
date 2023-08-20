@@ -2,6 +2,7 @@ package com.example.post.controller;
 
 import com.example.post.PostService;
 import com.example.post.dto.PostDto;
+import com.example.utills.UserHolder;
 import com.example.utills.validated.Marker;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
@@ -25,7 +27,7 @@ import java.util.List;
 public class PostsController {
 
     private final PostService postService;
-    private static final String REQUEST_USER_ID = "User-Id";
+    private final UserHolder userHolder;
 
     @GetMapping("/{userId}")
     @SecurityRequirement(name = "JWT")
@@ -46,9 +48,8 @@ public class PostsController {
     @Operation(
             summary = "Создание поста пользователем"
     )
-    public PostDto createPost(@RequestHeader(REQUEST_USER_ID) Long userId,
-                              @RequestBody PostDto dto) {
-        return postService.createPost(userId, dto);
+    public PostDto createPost(@Valid @RequestBody PostDto dto) {
+        return postService.createPost(userHolder.getUserId(), dto);
     }
 
     @PatchMapping("/{postId}")
@@ -57,10 +58,9 @@ public class PostsController {
     @Operation(
             summary = "Обновление поста пользователем"
     )
-    public PostDto updatePost(@RequestHeader(REQUEST_USER_ID) Long userId,
-                              @RequestBody PostDto dto,
+    public PostDto updatePost(@Valid @RequestBody PostDto dto,
                               @PathVariable Long postId) {
-        return postService.updatePost(userId, dto, postId);
+        return postService.updatePost(userHolder.getUserId(), dto, postId);
     }
 
     @DeleteMapping("/{postId}")
@@ -69,8 +69,7 @@ public class PostsController {
     @Operation(
             summary = "Удаление поста пользователем"
     )
-    public void deletePost(@RequestHeader(REQUEST_USER_ID) Long userId,
-                           @PathVariable Long postId) {
-        postService.deletePost(userId, postId);
+    public void deletePost(@PathVariable Long postId) {
+        postService.deletePost(userHolder.getUserId(), postId);
     }
 }
