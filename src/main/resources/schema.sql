@@ -1,6 +1,6 @@
---drop table if exists users cascade;
---drop table if exists posts cascade;
---drop table if exists friendship cascade;
+drop table if exists users cascade;
+drop table if exists posts cascade;
+drop table if exists friendship cascade;
 
 
 create table if not exists users (

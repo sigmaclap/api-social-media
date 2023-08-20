@@ -53,6 +53,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .orElseThrow(() -> new UserNotFoundException("User not deleted - failed")));
     }
 
+
     @Override
     public UserDetails loadUserByUsername(String username) {
         User user = repository.findUserByUsername(username)

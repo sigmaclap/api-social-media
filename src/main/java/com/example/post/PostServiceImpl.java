@@ -28,7 +28,8 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public List<PostDto> getAllPosts(Long userId, Integer from, Integer size) {
-        List<Post> posts = postRepository.findAllByOwner_idOrderByIdAsc(userId, PageRequest.of(from, size)).getContent();
+        List<Post> posts = postRepository
+                .findAllByOwner_idOrderByIdAsc(userId, PageRequest.of(from, size)).getContent();
         if (posts.isEmpty()) return Collections.emptyList();
         return posts.stream()
                 .map(PostMapper::toDtoPost)
@@ -60,6 +61,7 @@ public class PostServiceImpl implements PostService {
         validateUserOwnerPost(post, user);
         postRepository.delete(post);
     }
+
     private static void setPostDetails(Post postToUpdate, Post post) {
         if (postToUpdate.getText() != null) post.setText(postToUpdate.getText());
         if (postToUpdate.getDescription() != null) post.setDescription(post.getDescription());

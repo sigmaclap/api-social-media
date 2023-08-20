@@ -10,7 +10,7 @@ public interface FriendshipService {
 
     List<FriendshipDto> approveFriendship(long userId, List<Long> ids);
 
-    List<FriendshipDto> rejectFriendship(long userId, List<Long> ids);
+    List<FriendshipDto> rejectFriendship(long userId, List<Long> subscribersIds);
 
     FriendshipDto requestChat(long fromUser, long toUser);
 

@@ -10,7 +10,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,7 +23,7 @@ public class PostDto {
     private String description;
     @NotBlank(groups = Marker.OnCreate.class)
     private String text;
-    @NotNull(groups = Marker.OnCreate.class)
+    @NotBlank(groups = Marker.OnCreate.class)
     private String image;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = CommonPatterns.DATE_FORMAT)
     private LocalDateTime created;
