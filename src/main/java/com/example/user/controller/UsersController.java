@@ -38,7 +38,7 @@ public class UsersController {
         return userService.getUsers(ids, from, size);
     }
 
-    @DeleteMapping("/{userId}")
+    @DeleteMapping
     @SecurityRequirement(name = "JWT")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
